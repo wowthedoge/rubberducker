@@ -1,0 +1,10 @@
+body {
+    margin: 0px;
+    padding: 0px;
+}
+
+.ds-selected {
+    outline: 1px solid blue;
+    color: black;
+    font-weight: bold;
+}
