@@ -1,11 +1,10 @@
-import { useRef, forwardRef, useEffect } from 'react'
+import { useRef, forwardRef, useEffect, useState } from 'react'
 import DragSelect from 'dragselect'
 import './App.css';
 import { ArcherElement } from 'react-archer';
 
 
-const TextLine = ({ indent, data, handleClick, createInDB, editInDB, storeNewRef, deleteTextLine, isHighlighted }) => {
-
+const TextLine = ({ indent, data, handleClick, createInDB, editInDB, storeNewRef, deleteTextLine, isHighlighted, isPath }) => {
 
     const inputStyle = {
         width: '50%',
@@ -28,30 +27,31 @@ const TextLine = ({ indent, data, handleClick, createInDB, editInDB, storeNewRef
     const textLineStyle = {
         backgroundColor: isHighlighted ? '#0c2251' : 'transparent',
         marginBottom: '3px',
-        display: "flex",
+        display: 'flex',
         height: '30px',
 
     }
 
     const rightMarkerStyle = {
         height: '100%',
-        width: '10px',
+        width: '50px',
+        marginLeft: indent > 0? '40px':'0',
+        fontFamily: 'monospace',
+        color: isPath?'white':'#0abdc6',
     }
 
     const leftMarkerStyle = {
         height: '100%',
-        backgroundColor: 'green',
-        marginRight: indent > 0 ? 40 + 'px' : 0,
-        marginLeft: indent > 1 ? (indent - 1) * 40 + 'px' : 0
+        marginLeft: indent > 1? (indent-1)*40 + 'px':'0'
     }
 
 
     const textHasChanged = useRef(false)
     // onBlur
     const handleBlur = () => {
-        if (data.text.length === 0) {
-            deleteTextLine([data._id])
-        }
+        // if (data.text.length === 0) {
+        //     deleteTextLine([data._id])
+        // }
         // if text has changed
         if (textHasChanged.current) {
             // if not saved in DB
@@ -62,7 +62,7 @@ const TextLine = ({ indent, data, handleClick, createInDB, editInDB, storeNewRef
             // if saved in DB
             else {
                 textHasChanged.current = false
-                editInDB(data._id, data.text)
+                editInDB(data._id, data.text, null)
             }
         }
     }
@@ -77,23 +77,36 @@ const TextLine = ({ indent, data, handleClick, createInDB, editInDB, storeNewRef
         if (!textHasChanged.current) textHasChanged.current = true
         data.text = e.target.value
     }
+
+    const [time, settime] = useState(data.time)
+
+    useEffect(() => {
+        if (isPath) {
+            const interval = setInterval(() => settime(time+1), 1000)
+            if (time%60===0) editInDB(data._id, null, time)
+            return () => clearInterval(interval)
+        }
+            
+    })
+
+    const minutes = String(Math.floor(time/60)).padStart(2, '0')
+    const seconds = String(time%60).padStart(2, '0')
     
     const relationsList = data.children.map(child => ({
         targetId: child + "MARKER",
         targetAnchor: 'middle',
         sourceAnchor: 'left',
-        style: { strokeColor: '#0abdc6', strokeWidth: 1 },
+        style: { strokeColor: isPath?'white':'#0abdc6', strokeWidth: 1 },
     })).concat({
         targetId: data._id + "MARKER",
         targetAnchor: 'middle',
         sourceAnchor: 'right',
-        style: { strokeColor: '#0abdc6', strokeWidth: 1 },
+        style: { strokeColor: isPath?'white':'#0abdc6', strokeWidth: 1 },
     })
 
     return (
         <div className="box" onClick={() => handleClick(data._id)} onBlur={handleBlur} data-info={data._id} style={textLineStyle}>
-            <ArcherElement id={data._id + "MARKER"}
-            >
+            <ArcherElement id={data._id + "MARKER"}>
                 <div style={leftMarkerStyle}></div>
             </ArcherElement>
 
@@ -102,7 +115,7 @@ const TextLine = ({ indent, data, handleClick, createInDB, editInDB, storeNewRef
                 id={data._id}
                 relations={relationsList}>
                 {/* <p style={{color:'white'}}>{textLine._id}</p> */}
-                <div style={rightMarkerStyle}></div>
+                <div style={rightMarkerStyle}> {minutes}:{seconds} </div>
             </ArcherElement>
             <input className="TextBox" type="text" defaultValue={data.text} onChange={handleChange} style={inputStyle} ref={ref => handleRef(ref)}>
             </input>

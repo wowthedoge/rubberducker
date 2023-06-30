@@ -17,11 +17,11 @@ let AppStyle = {
 const App = () => {
 
 
-  // load history from database
   const initialTextLineId = 1
   const [textLines, setTextLines] = useState([{ _id: initialTextLineId, indent: 0, text: "", parent: null, children: [] }]) //list of TextLineData objects
 
   useEffect(() => {
+    // load history from database
     const getPreviousTextLines = async () => {
       await fetch("http://localhost:5050/page")
         .then(dbTextLines => dbTextLines.json())
@@ -41,6 +41,7 @@ const App = () => {
 
 
   const dfs = (textLines) => {
+    // dfs for displaying lines in order
     const root = textLines.find(tl => tl.parent === null)
     let stack = []
     let res = []
@@ -58,59 +59,60 @@ const App = () => {
   // ----- Add TextLine ----- //
   /*
   Detect keypress
-  add new textLine following currently selected textLine in state textLines
-  set newlyAddedId
+  add new textLine based on currently selected
+  setTextLines
   rerender
   storeNewRef
   focus on new TextLine
-  (upon unfocusing)
+
+  (upon unfocusing on previous)
   post request to db, create
   update id
+  
   */
   const addTextLine = (isChild) => {
     const selected = textLines.find(tl => tl._id === selectedInputId.current)
     // add only if current selected is not empty
-    if (selected.text.length > 0) {
-      const newId = textLines.length + 1
-      if (isChild) {
-        // add below lastChild's lastChild
-        // if self has no children, add below self
-        let addingIndex = textLines.findIndex(tl => tl._id === selected._id)
-        // if self has children, add below lastChild
-        if (selected.children.length > 0) {
-          const lastChild = textLines.find(tl => tl._id === selected.children[selected.children.length - 1])
-          addingIndex = textLines.findIndex(tl => tl._id === lastChild._id)
-          // if lastChild has children add below its last child
-          if (lastChild.children.length > 0) {
-            const lastChildslastChild = textLines.find(tl => tl._id === lastChild.children[lastChild.children.length - 1])
-            addingIndex = textLines.findIndex(tl => tl._id === lastChildslastChild._id)
-          }
+    const newId = textLines.length + 1
+    if (isChild) {
+      // add below lastChild's lastChild
+      // if self has no children, add below self
+      let addingIndex = textLines.findIndex(tl => tl._id === selected._id)
+      // if self has children, add below lastChild
+      if (selected.children.length > 0) {
+        const lastChild = textLines.find(tl => tl._id === selected.children[selected.children.length - 1])
+        addingIndex = textLines.findIndex(tl => tl._id === lastChild._id)
+        // if lastChild has children add below its last child
+        if (lastChild.children.length > 0) {
+          const lastChildslastChild = textLines.find(tl => tl._id === lastChild.children[lastChild.children.length - 1])
+          addingIndex = textLines.findIndex(tl => tl._id === lastChildslastChild._id)
         }
-        const parent = selected
-        const newTextLines = [...textLines.slice(0, addingIndex + 1),
-        { _id: newId, indent: parent.indent + 1, text: "", parent: parent._id, children: [] },
-        ...textLines.slice(addingIndex + 1)]
-        newTextLines.find(tl => tl._id === parent._id).children.push(newId)
-        setTextLines(newTextLines)
-      } else { // is sibling
-        if (selected.parent === null) return
-        // add below lastSibling's lastchild
-        const parent = textLines.find(tl => tl._id === selected.parent)
-        const lastSibling = textLines.find(tl => tl._id === parent.children[parent.children.length - 1])
-        // if last sibling has no children add below last sibling
-        let addingIndex = textLines.findIndex(tl => tl._id === lastSibling._id)
-        // if last sibling has children add it below the last child
-        if (lastSibling.children.length > 0) {
-          const lastChild = textLines.find(tl => tl._id === lastSibling.children[lastSibling.children.length - 1])
-          addingIndex = textLines.findIndex(tl => tl._id === lastChild._id)
-        }
-        const newTextLines = [...textLines.slice(0, addingIndex + 1),
-        { _id: newId, indent: parent.indent + 1, text: "", parent: parent._id, children: [] },
-        ...textLines.slice(addingIndex + 1)]
-        newTextLines.find(tl => tl._id === parent._id).children.push(newId)
-        setTextLines(newTextLines)
       }
+      const parent = selected
+      const newTextLines = [...textLines.slice(0, addingIndex + 1),
+      { _id: newId, indent: parent.indent + 1, text: "", parent: parent._id, children: [] },
+      ...textLines.slice(addingIndex + 1)]
+      newTextLines.find(tl => tl._id === parent._id).children.push(newId)
+      setTextLines(newTextLines)
+    } else { // is sibling
+      if (selected.parent === null) return
+      // add below lastSibling's lastchild
+      const parent = textLines.find(tl => tl._id === selected.parent)
+      const lastSibling = textLines.find(tl => tl._id === parent.children[parent.children.length - 1])
+      // if last sibling has no children add below last sibling
+      let addingIndex = textLines.findIndex(tl => tl._id === lastSibling._id)
+      // if last sibling has children add it below the last child
+      if (lastSibling.children.length > 0) {
+        const lastChild = textLines.find(tl => tl._id === lastSibling.children[lastSibling.children.length - 1])
+        addingIndex = textLines.findIndex(tl => tl._id === lastChild._id)
+      }
+      const newTextLines = [...textLines.slice(0, addingIndex + 1),
+      { _id: newId, indent: parent.indent + 1, text: "", parent: parent._id, children: [] },
+      ...textLines.slice(addingIndex + 1)]
+      newTextLines.find(tl => tl._id === parent._id).children.push(newId)
+      setTextLines(newTextLines)
     }
+
   }
   // scroll to new TextLine
   const endingRef = useRef(null)
@@ -132,7 +134,7 @@ const App = () => {
     const arrowKeyHandler = e => {
       e.preventDefault()
       console.log("pressed", e.key)
-      changeHighlights(e.key)
+      //changeHighlights(e.key)
     }
 
     const deleteHandler = e => {
@@ -142,25 +144,29 @@ const App = () => {
     const tabHandler = e => {
       e.preventDefault()
       console.log("tab pressed")
+      increaseIndent()
     }
 
-
-
+    const shiftTabHandler = e => {
+      e.preventDefault()
+      console.log("shiftTab pressed")
+      decreaseIndent()
+    }
     keyboardJS.bind('enter', enterHandler)
     keyboardJS.bind('shift + enter', shiftEnterHandler)
     keyboardJS.bind(['right', 'left', 'up', 'down'], arrowKeyHandler)
     keyboardJS.bind('delete', deleteHandler)
-    keyboardJS.bind('tab', tabHandler)
+    // keyboardJS.bind('tab', tabHandler)
+    // keyboardJS.bind('shift + tab', shiftTabHandler)
+
 
     return () => {
       keyboardJS.unbind('enter', enterHandler)
       keyboardJS.unbind('shift + enter', shiftEnterHandler)
       keyboardJS.unbind(['right', 'left', 'up', 'down'], arrowKeyHandler)
       keyboardJS.unbind('delete', deleteHandler)
-      keyboardJS.unbind('tab', tabHandler)
-
-
-
+      // keyboardJS.unbind('tab', tabHandler)
+      // keyboardJS.unbind('shift + tab', shiftTabHandler)
     }
   })
 
@@ -186,29 +192,18 @@ const App = () => {
       .catch(e => console.log(e))
   }
 
-  // update ID in refs and textLines
-  const updateId = (oldId, newId) => {
-    textLineRefs.current[newId] = textLineRefs.current[oldId]
-    delete textLineRefs[oldId]
-    setTextLines(textLines.map(textLine => {
-      const newTextLine = { ...textLine }
-      if (newTextLine._id === oldId) newTextLine._id = newId
-      if (newTextLine.parent === oldId) newTextLine.parent = newId
-      newTextLine.children = newTextLine.children.map(id => id === oldId ? newId : id)
-      return newTextLine
-    }))
-  }
-
-  const editInDB = async (id, newText) => {
+  const editInDB = async (id, newText, time) => {
     await fetch("http://localhost:5050/page", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        id: id,
-        text: newText,
-      }),
+      body:
+        JSON.stringify({
+          id: id,
+          text: newText,
+          time: time,
+        }),
     })
       .catch(e => console.log(e))
   }
@@ -235,7 +230,37 @@ const App = () => {
       .catch(e => console.log(e))
   }
 
+  // update ID in refs and textLines
+  const updateId = (oldId, newId) => {
+    textLineRefs.current[newId] = textLineRefs.current[oldId]
+    delete textLineRefs[oldId]
+    setTextLines(textLines.map(textLine => {
+      const newTextLine = { ...textLine }
+      if (newTextLine._id === oldId) newTextLine._id = newId
+      if (newTextLine.parent === oldId) newTextLine.parent = newId
+      newTextLine.children = newTextLine.children.map(id => id === oldId ? newId : id)
+      return newTextLine
+    }))
+  }
 
+  const decreaseIndent = () => {
+    console.log("decrease indent for", selectedInputId.current)
+    const newTextLines = [...textLines]
+    const selected = newTextLines.find(tl => tl._id === selectedInputId.current)
+    if (selected.indent > 0) selected.indent -= 1
+    setTextLines(newTextLines)
+
+    // change parent?
+
+  }
+
+  const increaseIndent = () => {
+    console.log("increase indent for", selectedInputId.current)
+    const newTextLines = [...textLines]
+    const selected = newTextLines.find(tl => tl._id === selectedInputId.current)
+    selected.indent += 1
+    setTextLines(newTextLines)
+  }
 
   // ----- TextLine Selecting & Focus ----- //
   const textLineRefs = useRef({}) //{_id: ref}
@@ -255,6 +280,7 @@ const App = () => {
     console.log(textLines.find(tl => tl._id === id))
     selectedInputId.current = id
     sethighlighted(getAllChildren(id))
+    getParentPath(id)
   }
 
   const deleteTextLines = (ids) => {
@@ -385,6 +411,20 @@ const App = () => {
     }
   }
 
+
+  const [path, setpath] = useState([])
+
+  const getParentPath = (id) => {
+    const newPath = []
+    newPath.push(id)
+    let current = textLines.find(tl => tl._id === id)
+    while (current.parent !== null) {
+      newPath.push(current.parent)
+      current = textLines.find(tl => tl._id === current.parent)
+    }
+    setpath(newPath)
+  }
+
   const getAllChildren = (id) => {
     // not in order
     let stack = []
@@ -427,10 +467,6 @@ const App = () => {
         endMarker={false}
         lineStyle='straight'
       >
-        <ArcherElement id="dummy"
-        >
-          <div>dummy</div>
-        </ArcherElement>
 
         {textLines.map((textLine) =>
 
@@ -444,6 +480,7 @@ const App = () => {
             storeNewRef={storeNewRef}
             deleteTextLine={deleteTextLines}
             isHighlighted={highlighted.includes(textLine._id)}
+            isPath={path.includes(textLine._id)}
           />
         )}
       </ArcherContainer>

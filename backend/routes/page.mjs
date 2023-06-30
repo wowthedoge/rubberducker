@@ -38,11 +38,15 @@ router.post("/", async (req, res) => {
 
 router.patch("/", async (req, res) => {
   const query = { _id: new ObjectId(req.body.id) };
-  const updates = {
+  const updates = req.body.text !== null ? {
     $set: {
       text: req.body.text,
     }
-  };
+  } : {
+    $set: {
+      time: req.body.time,
+    }
+  }
   let collection = await db.collection(collectionName);
   let result = await collection.updateOne(query, updates);
   console.log(result)
