@@ -9,7 +9,7 @@ const router = express.Router();
 // get all
 router.get("/", async (req, res) => {
   let collection = await db.collection(collectionName);
-  //let deleteAll = await collection.deleteMany({})
+  //let deleteAll = await collection.deleteMany(                                                                                                                                                                  {})
   let results = await collection.find({}).toArray()
   console.log("results", results)
   res.send(results).status(200);

@@ -4,7 +4,6 @@ body {
 }
 
 .ds-selected {
-    outline: 1px solid blue;
-    color: black;
-    font-weight: bold;
+    outline: 1px solid gray;
+
 }

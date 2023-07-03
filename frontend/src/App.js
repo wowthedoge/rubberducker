@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef, forwardRef, memo, useCallback } from 'react';
-import keyboardJS from 'keyboardjs';
 import './App.css';
 import { TextLine } from './TextLine'
-import { ArcherContainer, ArcherElement } from "react-archer";
 import 'reactflow/dist/style.css';
+import detectKeypress from './keypresses.js'
 
 
 import DragSelect from 'dragselect'
 
 let AppStyle = {
-  backgroundColor: '#091833',
+  backgroundColor: '#F0EEED',
   width: '100vw',
   height: '100vh',
 }
@@ -30,7 +29,7 @@ const App = () => {
           if (dbTextLines.length > 0) {
             dbTextLines = dfs(dbTextLines)
             // set selected to the last one
-            selectedInputId.current = dbTextLines[dbTextLines.length - 1]._id
+            selectedId.current = dbTextLines[dbTextLines.length - 1]._id
             setTextLines(dbTextLines)
           }
         })
@@ -57,63 +56,16 @@ const App = () => {
 
 
   // ----- Add TextLine ----- //
-  /*
-  Detect keypress
-  add new textLine based on currently selected
-  setTextLines
-  rerender
-  storeNewRef
-  focus on new TextLine
-
-  (upon unfocusing on previous)
-  post request to db, create
-  update id
-  
-  */
-  const addTextLine = (isChild) => {
-    const selected = textLines.find(tl => tl._id === selectedInputId.current)
-    // add only if current selected is not empty
+  const addTextLine = () => {
     const newId = textLines.length + 1
-    if (isChild) {
-      // add below lastChild's lastChild
-      // if self has no children, add below self
-      let addingIndex = textLines.findIndex(tl => tl._id === selected._id)
-      // if self has children, add below lastChild
-      if (selected.children.length > 0) {
-        const lastChild = textLines.find(tl => tl._id === selected.children[selected.children.length - 1])
-        addingIndex = textLines.findIndex(tl => tl._id === lastChild._id)
-        // if lastChild has children add below its last child
-        if (lastChild.children.length > 0) {
-          const lastChildslastChild = textLines.find(tl => tl._id === lastChild.children[lastChild.children.length - 1])
-          addingIndex = textLines.findIndex(tl => tl._id === lastChildslastChild._id)
-        }
-      }
-      const parent = selected
-      const newTextLines = [...textLines.slice(0, addingIndex + 1),
-      { _id: newId, indent: parent.indent + 1, text: "", parent: parent._id, children: [] },
-      ...textLines.slice(addingIndex + 1)]
-      newTextLines.find(tl => tl._id === parent._id).children.push(newId)
-      setTextLines(newTextLines)
-    } else { // is sibling
-      if (selected.parent === null) return
-      // add below lastSibling's lastchild
-      const parent = textLines.find(tl => tl._id === selected.parent)
-      const lastSibling = textLines.find(tl => tl._id === parent.children[parent.children.length - 1])
-      // if last sibling has no children add below last sibling
-      let addingIndex = textLines.findIndex(tl => tl._id === lastSibling._id)
-      // if last sibling has children add it below the last child
-      if (lastSibling.children.length > 0) {
-        const lastChild = textLines.find(tl => tl._id === lastSibling.children[lastSibling.children.length - 1])
-        addingIndex = textLines.findIndex(tl => tl._id === lastChild._id)
-      }
-      const newTextLines = [...textLines.slice(0, addingIndex + 1),
-      { _id: newId, indent: parent.indent + 1, text: "", parent: parent._id, children: [] },
-      ...textLines.slice(addingIndex + 1)]
-      newTextLines.find(tl => tl._id === parent._id).children.push(newId)
-      setTextLines(newTextLines)
-    }
-
+    const selectedIndex = textLines.findIndex(tl => tl._id === selectedId.current)
+    const newTextLines = [...textLines.slice(0, selectedIndex + 1),
+    { _id: newId, indent: 0, text: "", parent: textLines[0]._id, children: [] },
+    ...textLines.slice(selectedIndex + 1)]
+    newTextLines[0].children.push(newId)
+    setTextLines(newTextLines)
   }
+
   // scroll to new TextLine
   const endingRef = useRef(null)
   useEffect(() => {
@@ -122,53 +74,7 @@ const App = () => {
 
 
   // ----- Detect Keypress ----- //
-  useEffect(() => {
-    const enterHandler = e => {
-      addTextLine(true)
-    }
-
-    const shiftEnterHandler = e => {
-      addTextLine(false)
-    }
-
-    const arrowKeyHandler = e => {
-      e.preventDefault()
-      console.log("pressed", e.key)
-      //changeHighlights(e.key)
-    }
-
-    const deleteHandler = e => {
-      deleteTextLines(highlighted)
-    }
-
-    const tabHandler = e => {
-      e.preventDefault()
-      console.log("tab pressed")
-      increaseIndent()
-    }
-
-    const shiftTabHandler = e => {
-      e.preventDefault()
-      console.log("shiftTab pressed")
-      decreaseIndent()
-    }
-    keyboardJS.bind('enter', enterHandler)
-    keyboardJS.bind('shift + enter', shiftEnterHandler)
-    keyboardJS.bind(['right', 'left', 'up', 'down'], arrowKeyHandler)
-    keyboardJS.bind('delete', deleteHandler)
-    // keyboardJS.bind('tab', tabHandler)
-    // keyboardJS.bind('shift + tab', shiftTabHandler)
-
-
-    return () => {
-      keyboardJS.unbind('enter', enterHandler)
-      keyboardJS.unbind('shift + enter', shiftEnterHandler)
-      keyboardJS.unbind(['right', 'left', 'up', 'down'], arrowKeyHandler)
-      keyboardJS.unbind('delete', deleteHandler)
-      // keyboardJS.unbind('tab', tabHandler)
-      // keyboardJS.unbind('shift + tab', shiftTabHandler)
-    }
-  })
+  useEffect(() => detectKeypress(addTextLine, increaseIndent, decreaseIndent, handleBackspace))
 
   // ----- DB methods ------ //
   // create document in db
@@ -223,7 +129,7 @@ const App = () => {
         if (dbTextLines.length > 0) {
           dbTextLines = dfs(dbTextLines)
           // set selected to the last one
-          selectedInputId.current = dbTextLines[dbTextLines.length - 1]._id
+          selectedId.current = dbTextLines[dbTextLines.length - 1]._id
           setTextLines(dbTextLines)
         }
       })
@@ -244,44 +150,42 @@ const App = () => {
   }
 
   const decreaseIndent = () => {
-    console.log("decrease indent for", selectedInputId.current)
+    console.log("decrease indent for", selectedId.current)
     const newTextLines = [...textLines]
-    const selected = newTextLines.find(tl => tl._id === selectedInputId.current)
+    const selected = newTextLines.find(tl => tl._id === selectedId.current)
     if (selected.indent > 0) selected.indent -= 1
     setTextLines(newTextLines)
-
-    // change parent?
-
   }
 
   const increaseIndent = () => {
-    console.log("increase indent for", selectedInputId.current)
+    console.log("increase indent for", selectedId.current)
     const newTextLines = [...textLines]
-    const selected = newTextLines.find(tl => tl._id === selectedInputId.current)
+    const selected = newTextLines.find(tl => tl._id === selectedId.current)
     selected.indent += 1
     setTextLines(newTextLines)
   }
 
+  const handleBackspace = () => {
+    console.log("handleBackspace")
+    const current = textLines.find(tl => tl._id === selectedId.current)
+    if (current.text.length === 0) {
+      if (current.indent > 0) decreaseIndent()
+      else deleteTextLines([selectedId.current])
+    }
+  }
+
   // ----- TextLine Selecting & Focus ----- //
   const textLineRefs = useRef({}) //{_id: ref}
-  const selectedInputId = useRef(initialTextLineId)
-  const [highlighted, sethighlighted] = useState([])
+  const selectedId = useRef(initialTextLineId)
 
   const storeNewRef = (_id, ref) => {
     if (ref !== null && !(_id in textLineRefs.current)) {
       textLineRefs.current[_id] = ref
       ref.focus()
-      selectedInputId.current = _id
-      sethighlighted(getAllChildren(_id))
+      selectedId.current = _id
     }
   }
 
-  const handleClick = (id) => {
-    console.log(textLines.find(tl => tl._id === id))
-    selectedInputId.current = id
-    sethighlighted(getAllChildren(id))
-    getParentPath(id)
-  }
 
   const deleteTextLines = (ids) => {
 
@@ -296,19 +200,19 @@ const App = () => {
     ids.forEach(id => delete textLineRefs.current[id])
 
     // Focusing on a replacement
-    let replacementIndex = textLines.findIndex(tl => tl._id === selectedInputId.current)
+    let replacementIndex = textLines.findIndex(tl => tl._id === selectedId.current)
     if (replacementIndex === newTextLines.length) replacementIndex -= 1
     const newSelected = newTextLines[replacementIndex]
-    selectedInputId.current = newSelected._id
+    selectedId.current = newSelected._id
     textLineRefs.current[newSelected._id].focus()
     const DBids = ids.filter(id => id.length === 24)
     deleteInDB(DBids)
-    sethighlighted(getAllChildren(newSelected._id))
+    //sethighlighted(getAllChildren(newSelected._id))
     setTextLines(newTextLines)
   }
 
   const changeHighlights = (key) => {
-    const selected = textLines.find(tl => selectedInputId.current === tl._id)
+    const selected = textLines.find(tl => selectedId.current === tl._id)
     const parent = textLines.find(tl => tl._id === selected.parent)
     switch (key) {
       case 'ArrowUp':
@@ -318,19 +222,19 @@ const App = () => {
           // if currently selected is first child
           if (selected._id === parent.children[0]) {
             // go to parent
-            selectedInputId.current = parent._id
+            selectedId.current = parent._id
             console.log("up, go to parent", parent._id)
             textLineRefs.current[parent._id].focus()
-            sethighlighted(getAllChildren(parent._id))
+            //sethighlighted(getAllChildren(parent._id))
           } else { // if currently selected is not first child
             // go to previous sibling
             const indexAsChild = parent.children.findIndex(c => c === selected._id)
             const previousSiblingId = parent.children[indexAsChild - 1]
-            selectedInputId.current = previousSiblingId
+            selectedId.current = previousSiblingId
             console.log("up, go to previous sibling", previousSiblingId)
 
             textLineRefs.current[previousSiblingId].focus()
-            sethighlighted(getAllChildren(previousSiblingId))
+            //sethighlighted(getAllChildren(previousSiblingId))
           }
         }
 
@@ -340,9 +244,9 @@ const App = () => {
 
         // if at root, target second textLine
         if (selected._id === textLines[0]._id) {
-          selectedInputId.current = textLines[1]._id
+          selectedId.current = textLines[1]._id
           textLineRefs.current[textLines[1]._id].focus()
-          sethighlighted(getAllChildren(textLines[1]._id))
+          //sethighlighted(getAllChildren(textLines[1]._id))
           break
         }
         //if parent is root, target sibling of root
@@ -352,16 +256,16 @@ const App = () => {
           // if not the last child
           if (indexAsChild !== root.children.length - 1) {
             const siblingId = root.children[indexAsChild + 1]
-            selectedInputId.current = siblingId
+            selectedId.current = siblingId
             textLineRefs.current[siblingId].focus()
-            sethighlighted(getAllChildren(siblingId))
+            //sethighlighted(getAllChildren(siblingId))
             break
           } else { // if the last child
             if (selected.children.length > 0) { // if has children, go to first child
               const firstChildId = selected.children[0]
-              selectedInputId.current = firstChildId
+              selectedId.current = firstChildId
               textLineRefs.current[firstChildId].focus()
-              sethighlighted(getAllChildren(firstChildId))
+              // sethighlighted(getAllChildren(firstChildId))
               break
             }
           }
@@ -375,16 +279,16 @@ const App = () => {
             const grandparent = textLines.find(tl => tl._id === parent.parent)
             const parentIndex = grandparent.children.findIndex(p => p === parent._id)
             const siblingOfParentId = grandparent.children[parentIndex + 1]
-            selectedInputId.current = siblingOfParentId
+            selectedId.current = siblingOfParentId
             textLineRefs.current[siblingOfParentId].focus()
-            sethighlighted(getAllChildren(siblingOfParentId))
+            // sethighlighted(getAllChildren(siblingOfParentId))
           } else {
             // go to next sibling
             const indexAsChild = parent.children.findIndex(c => c === selected._id)
             const nextSiblingId = parent.children[indexAsChild + 1]
-            selectedInputId.current = nextSiblingId
+            selectedId.current = nextSiblingId
             textLineRefs.current[nextSiblingId].focus()
-            sethighlighted(getAllChildren(nextSiblingId))
+            // sethighlighted(getAllChildren(nextSiblingId))
           }
         }
         break
@@ -392,18 +296,18 @@ const App = () => {
         //  go to parent
         if (selected.parent !== null) {
 
-          selectedInputId.current = parent._id
+          selectedId.current = parent._id
           textLineRefs.current[parent._id].focus()
-          sethighlighted(getAllChildren(parent._id))
+          // sethighlighted(getAllChildren(parent._id))
         }
         break
       case 'ArrowRight':
         // go to child
         if (selected.children.length > 0) {
           const childId = selected.children[0]
-          selectedInputId.current = childId
+          selectedId.current = childId
           textLineRefs.current[childId].focus()
-          sethighlighted(getAllChildren(childId))
+          // sethighlighted(getAllChildren(childId))
         }
         break
       default:
@@ -441,49 +345,47 @@ const App = () => {
   }
 
 
-  // // ----- Drag Select ----- //
-  // const [selectedItems, setSelectedItems] = useState([]);
-  // const ds = new DragSelect({
-  //   selectables: document.getElementsByClassName("box"),
-  //   draggability: false
-  // });
+  // ----- Drag Select ----- //
+  const [selectedItems, setSelectedItems] = useState([]);
+  const ds = new DragSelect({
+    selectables: document.getElementsByClassName("box"),
+    draggability: false
+  });
 
-  // useEffect(() => {
-  //   ds.subscribe("callback", (e) => {
-  //     //e.items.forEach(item => console.log("dragSelect: ", item.getAttribute('data-info')))
-  //     setSelectedItems(e.items)
-  //   });
+  useEffect(() => {
+    ds.subscribe("callback", (e) => {
+      if (e.items.length > 0) {
+        setSelectedItems(e.items)
+        selectedId.current  = e.items[e.items.length-1].getAttribute('data-info')
+      }
+    });
 
-  //   return () => {
-  //     ds.unsubscribe();
-  //   };
-  // }, []);
+    return () => {
+      ds.unsubscribe();
+    };
+  }, []);
 
   // ----- render ----- //
   return (
 
     <div className="App" style={AppStyle}>
-      <ArcherContainer
-        endMarker={false}
-        lineStyle='straight'
-      >
+      <AppBar />
 
-        {textLines.map((textLine) =>
 
+        {textLines.map((textLine, index) =>
           <TextLine
             key={textLine._id}
             indent={textLine.indent}
+            numbering={index + 1}
             data={textLine}
-            handleClick={handleClick}
             createInDB={createInDB}
             editInDB={editInDB}
             storeNewRef={storeNewRef}
-            deleteTextLine={deleteTextLines}
-            isHighlighted={highlighted.includes(textLine._id)}
+            //isHighlighted={highlighted.includes(textLine._id)}
             isPath={path.includes(textLine._id)}
+            isSelected={selectedItems.includes(textLine._id)}
           />
         )}
-      </ArcherContainer>
       <div ref={endingRef}></div>
     </div>
   )
@@ -491,7 +393,26 @@ const App = () => {
 
 
 
-
+const AppBar = () => {
+  const AppBarStyle = {
+    height: '50px',
+    background: 'linear-gradient(to bottom, white, gray)',
+    display: 'flex',
+    alignItems: 'center',
+    fontFamily: 'Impact',
+    fontSize: '1.3rem',
+    paddingLeft: '30px',
+    WebkitUserSelect: 'none', /* For WebKit-based browsers */
+    MozUserSelect: 'none', /* For Firefox */
+    msUserSelect: 'none', /* For Microsoft Edge */
+    userSelect: 'none',
+  }
+  return (
+    <div style={AppBarStyle}>
+      RUBBERDUCKER
+    </div>
+  )
+}
 
 
 
