@@ -1,138 +1,111 @@
-import { useRef, forwardRef, useEffect, useState } from 'react'
-import DragSelect from 'dragselect'
-import './App.css';
-import { ArcherElement } from 'react-archer';
-
-const backgroundColor = "#a7a195"
-const textColor = "#303030"
-const accentColor = "#055E68"
-
-const TextLine = ({ indent, numbering, data, createInDB, editInDB, storeNewRef, isPath, isSelected }) => {
-
-    const numberingStyle = {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#d6b59f',
-        height: '100%',
-        minWidth: '30px',
-        fontFamily: 'monospace',
-        fontWeight: 'bold',
-        color: '#73675f ',
-        WebkitUserSelect: 'none', /* For WebKit-based browsers */
-        MozUserSelect: 'none', /* For Firefox */
-        msUserSelect: 'none', /* For Microsoft Edge */
-        userSelect: 'none',
-    }
+import { useEffect, useRef } from "react"
 
 
+const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pathLength, selectNew }) => {
+
+    const verticalLineLength = lastChildIndex - index
 
     const inputStyle = {
         width: '50%',
+        height: '100%',
         backgroundColor: 'transparent',
         resize: 'none',
         fontSize: '1rem',
         overflow: 'hidden',
         overflowWrap: 'break-word',
-        fontFamily: 'monospace',
-        color: textColor,
-        padding: '0.2rem',
-        paddingLeft: '1rem',
+        fontFamily: 'Fira Code, monospace',
+        fontWeight: isSelected || pathLength > 0 ? 'bold' : 'normal',
+        color: 'black',
         appearance: 'none',
-        WebkitAppearance: 'none', // For Safari and other WebKit-based browsers
-        MozAppearance: 'none', // For Firefox
-        border: 'none', // Optional: remove border
+        WebkitAppearance: 'none',
+        MozAppearance: 'none',
+        border: 'none',
         outline: 'none',
-        marginLeft: 60*indent + 'px'
-
+        marginLeft: indent * 6 + '%',
     }
 
     const textLineStyle = {
-        backgroundColor: backgroundColor,
-        display: 'flex',
         height: '30px',
+        paddingLeft: '10%',
+        display: 'flex',
+        flexDirection: 'row',
+        backgroundColor: isSelected ? '#D9D9D9' : 'white',
 
     }
 
-    // const markerStyle = {
-    //     height: '100%',
-    //     width: '20px',
-    //     marginLeft: 40*indent + 'px',
-    //     borderLeft: '3px solid black',
-    //     display: 'flex',
-    //     alignItems: 'center',
-    // }
+    const horizontalLineStyle = {
+        position: 'relative',
+        left: indent > 0 ? 2 + (indent - 1) * 6 + '%' : '-12%',
+        top: '15px',
+        width: indent > 0 ? '3%' : '11%',
+        borderBottom: isSelected || pathLength > 0 ? '3px solid black' : '1px solid black',
+    }
 
-    // const innerMarkerStyle = {
-    //     marginTop: 'auto',
-    //     marginBottom: 'auto',
-    //     border: '1px solid black',
-    //     width: '100%',
-    // }
+    const verticalLineContainer = {
+        position: 'relative',
+        //height: verticalLineLength * 30 - 14 + 'px',
+        top: '29.5px',
+        left: 2 + indent * 6 + '%',
+        
+    }
 
-
-    const textHasChanged = useRef(false)
-    // onBlur
-    const handleBlur = () => {
-        // if text has changed
-        if (textHasChanged.current) {
-            // if not saved in DB
-            if (data._id.length !== 24) {
-                textHasChanged.current = false
-                createInDB(data._id)
-            }
-            // if saved in DB
-            else {
-                textHasChanged.current = false
-                editInDB(data._id, data.text, null)
-            }
+    const verticalLineFirstHalfLengthPx = () => {
+        const firsthalf = pathLength > 0? (pathLength-1)*30+16:0
+        if (index === 0) {
+        
+            console.log("firsthalf", text, firsthalf)
+            console.log("secondhalf", text, (verticalLineLength*30-18)-firsthalf)
         }
+        return firsthalf
     }
 
-    const handleRef = ref => {
-        storeNewRef(data._id, ref)
+    const verticalLineFirstHalf = {
+        borderLeft: '3px solid black',
+        height: verticalLineFirstHalfLengthPx() + 'px'
     }
 
-
-
-    const handleChange = (e) => {
-        if (!textHasChanged.current) textHasChanged.current = true
-        data.text = e.target.value
+    const verticalLineSecondHalf = {
+        borderLeft: '1px solid black',
+        height: (verticalLineLength*30-14)-verticalLineFirstHalfLengthPx() + 'px'
     }
 
-    const [time, settime] = useState(isNaN(data.time) ? 0 : data.time)
+    const container = {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        height: '100%',
+    }
+
+    const inputRef = useRef(null)
 
     useEffect(() => {
-        if (isPath) {
-            const interval = setInterval(() => settime(time + 1), 1000)
-            if (time % 60 === 0) editInDB(data._id, null, time)
-            return () => clearInterval(interval)
-        }
-    })
+        if (isSelected) inputRef.current.focus()
+    }, [isSelected])
 
-    const minutes = String(Math.floor(time / 60)).padStart(2, '0')
-    const seconds = String(time % 60).padStart(2, '0')
+    useEffect(() => {}, [lastChildIndex, index, pathLength])
 
-    // const branches = () => {
-    //     if (indent > 0) {
-    //         return (
-    //             <div style={markerStyle}>
-    //                 <div style={innerMarkerStyle}> </div>
-    //             </div>
-    //         )
-    //     }
 
-    // }
+    const handleInput = (e) => {
+        setText(index, e.target.value)
+    }
 
     return (
-        <div className="box" onClick={() => { }} onBlur={handleBlur} data-info={data._id} style={textLineStyle}>
+        <div className="box" style={textLineStyle} onClick={() => {
+            selectNew(index)
+        }}>
 
-            <div style={numberingStyle}> {numbering} </div>
-
-            <input type="text" defaultValue={data.text} onChange={handleChange} style={inputStyle} ref={ref => handleRef(ref)}>
-            </input>
+            {verticalLineLength > 0 &&
+                <div style={verticalLineContainer}>
+                    <div style={verticalLineFirstHalf} />
+                    <div style={verticalLineSecondHalf} />
+                </div>
+            }
+            <div style={container}>
+                {(text.length > 0 || isSelected) && <div style={horizontalLineStyle} />}
+                <input type="text" defaultValue={text} style={inputStyle} ref={inputRef} onInput={handleInput} />
+            </div>
         </div>
     )
 }
 
-export { TextLine };
+export { TextLine }

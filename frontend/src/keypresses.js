@@ -1,15 +1,15 @@
 
 import keyboardJS from 'keyboardjs';
 
-export default function detectKeypress(addTextLine, increaseIndent, decreaseIndent, handleBackspace) {
+export default function detectKeypress(selectedIndex, addTextLine, increaseIndent, decreaseIndent, handleBackspace, changeFocus, test) {
     const enterHandler = e => {
-      addTextLine()
+      addTextLine(selectedIndex)
     }
 
     const arrowKeyHandler = e => {
       e.preventDefault()
-      console.log("pressed", e.key)
-      //changeHighlights(e.key)
+      if (e.key === 'ArrowUp') changeFocus('up', selectedIndex)
+      if (e.key === 'ArrowDown') changeFocus('down', selectedIndex)
     }
 
     const deleteHandler = e => {
@@ -17,26 +17,31 @@ export default function detectKeypress(addTextLine, increaseIndent, decreaseInde
     }
 
     const backspaceHandler = e => {
-      handleBackspace()
+      handleBackspace(selectedIndex, e)
     }
 
     const tabHandler = e => {
       e.preventDefault()
-      console.log("tab pressed")
-      increaseIndent()
+      increaseIndent(selectedIndex)
     }
 
     const shiftTabHandler = e => {
       e.preventDefault()
-      console.log("shiftTab pressed")
-      decreaseIndent()
+      decreaseIndent(selectedIndex)
     }
+
+    const testHandler = e => {
+      test(selectedIndex)  
+    }
+
     keyboardJS.bind('enter', enterHandler)
     keyboardJS.bind(['up', 'down'], arrowKeyHandler)
     keyboardJS.bind('delete', deleteHandler)
     keyboardJS.bind('tab', tabHandler)
     keyboardJS.bind('shift + tab', shiftTabHandler)
     keyboardJS.bind('backspace', backspaceHandler)
+    keyboardJS.bind('space', testHandler)
+
 
 
     return () => {
@@ -46,6 +51,7 @@ export default function detectKeypress(addTextLine, increaseIndent, decreaseInde
       keyboardJS.unbind('tab', tabHandler)
       keyboardJS.unbind('shift + tab', shiftTabHandler)
       keyboardJS.unbind('backspace', backspaceHandler)
+      keyboardJS.unbind('space', testHandler)
 
     }
   }

@@ -8,25 +8,25 @@ const router = express.Router();
 
 // get all
 router.get("/", async (req, res) => {
-  let collection = await db.collection(collectionName);
-  //let deleteAll = await collection.deleteMany(                                                                                                                                                                  {})
+  let collection = await db.collection(collectionName)
+  let deleteAll = await collection.deleteMany(                                                                                                                                                                  {})
   let results = await collection.find({}).toArray()
   console.log("results", results)
-  res.send(results).status(200);
+  res.send(results).status(200)
 });
 
 // create
 router.post("/", async (req, res) => {
-  let collection = await db.collection(collectionName);
+  let collection = await db.collection(collectionName)
   let newDocument = {
     text: req.body.text,
     indent: req.body.indent,
     parent: req.body.parent,
     children: [],
   };
-  let result = await collection.insertOne(newDocument);
+  let result = await collection.insertOne(newDocument)
   const insertedId = result.insertedId
-  const query = { _id: new ObjectId(req.body.parent) };
+  const query = { _id: new ObjectId(req.body.parent) }
   const update = {
     $push: {
       children: insertedId
@@ -62,11 +62,10 @@ router.delete("/", async (req, res) => {
   await collection.deleteMany({ _id: { $in: ids } });
 
   // Update all documents that have the deleted IDs in their children array
-  await collection.updateMany(
+  let result = await collection.updateMany(
     { children: { $in: ids } },
     { $pull: { children: { $in: ids } } }
   );
-  let result = await collection.find({}).toArray()
   res.send(result).status(200);
 });
 
