@@ -199,7 +199,6 @@ const App2 = () => {
     }
   }
 
-
   const deleteTextLines = (ids) => {
 
     // prevent deleting root

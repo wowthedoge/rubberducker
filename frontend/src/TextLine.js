@@ -1,8 +1,7 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 
-const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pathLength, selectNew }) => {
-
+const TextLine = ({ index, indent, text, setText, savedTime, lastChildIndex, isSelected, pathLength, selectNew, saveTime }) => {
     const verticalLineLength = lastChildIndex - index
 
     const inputStyle = {
@@ -13,7 +12,6 @@ const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pa
         fontSize: '1rem',
         overflow: 'hidden',
         overflowWrap: 'break-word',
-        fontFamily: 'Fira Code, monospace',
         fontWeight: isSelected || pathLength > 0 ? 'bold' : 'normal',
         color: 'black',
         appearance: 'none',
@@ -22,6 +20,8 @@ const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pa
         border: 'none',
         outline: 'none',
         marginLeft: indent * 6 + '%',
+        fontFamily: 'Fira Code, monospace',
+
     }
 
     const textLineStyle = {
@@ -30,7 +30,6 @@ const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pa
         display: 'flex',
         flexDirection: 'row',
         backgroundColor: isSelected ? '#D9D9D9' : 'white',
-
     }
 
     const horizontalLineStyle = {
@@ -43,37 +42,44 @@ const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pa
 
     const verticalLineContainer = {
         position: 'relative',
-        //height: verticalLineLength * 30 - 14 + 'px',
         top: '29.5px',
         left: 2 + indent * 6 + '%',
-        
+
     }
 
     const verticalLineFirstHalfLengthPx = () => {
-        const firsthalf = pathLength > 0? (pathLength-1)*30+16:0
-        if (index === 0) {
-        
-            console.log("firsthalf", text, firsthalf)
-            console.log("secondhalf", text, (verticalLineLength*30-18)-firsthalf)
-        }
-        return firsthalf
+        return pathLength > 0 ? (pathLength - 1) * 30 + 16 : 0
     }
 
     const verticalLineFirstHalf = {
         borderLeft: '3px solid black',
+        margin: '0',
+        padding: '0',
         height: verticalLineFirstHalfLengthPx() + 'px'
     }
 
     const verticalLineSecondHalf = {
         borderLeft: '1px solid black',
-        height: (verticalLineLength*30-14)-verticalLineFirstHalfLengthPx() + 'px'
+        margin: '0',
+        padding: '0',
+        height: (verticalLineLength * 30 - 14) - verticalLineFirstHalfLengthPx() + 'px'
     }
 
-    const container = {
+    const horizontalContainer = {
         display: 'flex',
         flexDirection: 'column',
-        width: '100%',
+        width: '100%',  
         height: '100%',
+    }
+
+    const timeStyle = {
+        fontFamily: 'Fira Code, monospace',
+
+        position: 'absolute',
+        top: indent > 0 ? '-10px' : '-18px',
+        right: indent > 0 ? '28px' : '0px',
+        color: 'gray',
+        fontSize: isSelected ? '0.75rem' : '0.6rem',
     }
 
     const inputRef = useRef(null)
@@ -82,17 +88,28 @@ const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pa
         if (isSelected) inputRef.current.focus()
     }, [isSelected])
 
-    useEffect(() => {}, [lastChildIndex, index, pathLength])
-
-
     const handleInput = (e) => {
         setText(index, e.target.value)
     }
 
+    const [time, setTime] = useState(savedTime)
+
+    useEffect(() => {
+        if (pathLength > 0 || isSelected) {
+            const interval = setInterval(() => {
+                setTime(time + 1)
+                saveTime(index, time + 1)
+            }, 1000)
+            return () => clearInterval(interval)
+        }
+    })
+
+    const hours = String(Math.floor(time / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((time % 3600) / 60)).padStart(2, '0');
+    const seconds = String(time % 60).padStart(2, '0');
+
     return (
-        <div className="box" style={textLineStyle} onClick={() => {
-            selectNew(index)
-        }}>
+        <div className="box" style={textLineStyle} data-info={index} onClick={() => { selectNew(index) }}>
 
             {verticalLineLength > 0 &&
                 <div style={verticalLineContainer}>
@@ -100,8 +117,10 @@ const TextLine = ({ index, indent, text, setText, lastChildIndex, isSelected, pa
                     <div style={verticalLineSecondHalf} />
                 </div>
             }
-            <div style={container}>
-                {(text.length > 0 || isSelected) && <div style={horizontalLineStyle} />}
+            <div style={horizontalContainer}>
+                {(text.length > 0 || isSelected) && <div style={horizontalLineStyle}>
+                    {(isSelected || pathLength > 0) && <div style={timeStyle}>{time>3600&&hours+":"}{minutes}:{seconds}</div>}
+                </div>}
                 <input type="text" defaultValue={text} style={inputStyle} ref={inputRef} onInput={handleInput} />
             </div>
         </div>

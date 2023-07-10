@@ -3,6 +3,7 @@ import './App.css'
 import { TextLine } from './TextLine'
 import detectKeypress from './keypresses.js'
 import { v4 as uuidv4 } from 'uuid'
+import DragSelect from 'dragselect'
 
 const App = () => {
     let AppStyle = {
@@ -11,11 +12,12 @@ const App = () => {
     }
 
     const [textLines, setTextLines] = useState([
-        { indent: 0, text: "1", isSelected: false, pathLength: 0 },
-        { indent: 1, text: "2", isSelected: false, pathLength: 0 },
-        { indent: 1, text: "3", isSelected: false, pathLength: 0 },
-        { indent: 2, text: "4", isSelected: false, pathLength: 0 },
-        { indent: 0, text: "5", isSelected: false, pathLength: 0 },
+        { indent: 0, text: "0", isSelected: false, pathLength: 0, time: 4200 },
+        { indent: 0, text: "1", isSelected: false, pathLength: 0, time: 4200 },
+        { indent: 1, text: "2", isSelected: false, pathLength: 0, time: 4200 },
+        { indent: 1, text: "3", isSelected: false, pathLength: 0, time: 4200 },
+        { indent: 2, text: "4", isSelected: false, pathLength: 0, time: 4200 },
+        { indent: 0, text: "5", isSelected: false, pathLength: 0, time: 4200 },
     ])
 
     const selectedIndex = useRef(-1)
@@ -40,6 +42,7 @@ const App = () => {
             const newTextLines = [...textLines]
             newTextLines[index].indent -= 1
             setTextLines(newTextLines)
+            setPath(index)
         } else {
             deleteTextLine(index)
         }
@@ -50,6 +53,7 @@ const App = () => {
         const newTextLines = [...textLines]
         newTextLines[index].indent += 1
         setTextLines(newTextLines)
+        setPath(index)
     }
 
     const handleBackSpace = (index, e) => {
@@ -59,49 +63,43 @@ const App = () => {
         }
     }
 
-    const findPath = (index, textLines) => {
-        let path = {}
-        let lastIndent = textLines[index].indent
-        path[index] = 0
-        let length = 0
-        for (let i = index; i >= 0; i--) {
-            const current = textLines[i]
-            // found parent
-            if (current.indent === lastIndent - 1 && current.text.length > 0) {
-                lastIndent = current.indent
-                path[i] = length
-                length = 0
+    const setPath = (index) => {
+        setTextLines(prevTextLines => {
+            const newTextLines = [...prevTextLines]
+            newTextLines.forEach(tl => tl.pathLength = 0)
+            let lastIndent = newTextLines[index].indent
+            let length = 0
+            for (let i = index; i >= 0; i--) {
+                const current = newTextLines[i]
+                // found parent
+                if (current.indent === lastIndent - 1 && current.text.length > 0) {
+                    lastIndent = current.indent
+                    current.pathLength = length
+                    length = 0
+                }
+                // terminate
+                if (current.indent === 0 && current.text.length > 0) break
+                length++
             }
-            // terminate
-            if (current.indent === 0 && current.text.length > 0) {
-                break
-            }
-            length++
+            return newTextLines
         }
-        return path
-    }
+        )
+    }   
 
     const selectNew = (index) => {
         console.log("selectNew", index)
         selectedIndex.current = index
         setTextLines(prevTextLines => {
-            const path = findPath(index, prevTextLines)
-            const newTL = prevTextLines.map((tl, i) => {
-                const newTL = { ...tl }
-                newTL.pathLength = path.hasOwnProperty(i) ? path[i] : 0
-                newTL.isSelected = i === index ? true : false
-                return newTL
-            }
-            )
-            console.log("new textLines", newTL)
-            return newTL
+            return prevTextLines.map((tl, i) => i === index ?
+                { ...tl, isSelected: true } : { ...tl, isSelected: false })
         })
+        setPath(index)
     }
 
     const addTextLine = (index) => {
         const indent = textLines[index].indent
         setTextLines([...textLines.slice(0, index + 1),
-        { indent: indent, text: "", isSelected: false },
+        { indent: indent, text: "", isSelected: false, pathLength:0, time:0 },
         ...textLines.slice(index + 1)])
         selectNew(index + 1)
     }
@@ -118,7 +116,10 @@ const App = () => {
         setTextLines(textLines.map((tl, i) => i === index ? { ...tl, text: text } : tl))
     }
 
-    // initial select
+    const saveTime = (index, time) => {
+        setTextLines(prevTextLines => prevTextLines.map((tl, i) => i===index ? {...tl, time:time}:tl))
+    }
+    
     useEffect(() => selectNew(2), [])
 
     const calculateLastChildIndex = (index) => {
@@ -132,10 +133,13 @@ const App = () => {
             // found child
             if (current.indent === indent + 1) res = i
             // terminate loop
-            if (current.indent === indent) return res
-            if (current.indent === 0) return res
+            if (current.indent === indent) {
+                return res
+            }
+            if (current.indent === 0) {
+                return res
+            }
         }
-
         return res
     }
 
@@ -152,7 +156,9 @@ const App = () => {
                     lastChildIndex={calculateLastChildIndex(index)}
                     isSelected={textLine.isSelected}
                     pathLength={textLine.pathLength}
+                    savedTime={textLine.time}
                     selectNew={selectNew}
+                    saveTime={saveTime}
                 />)}
         </div>
     )
