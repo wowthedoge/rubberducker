@@ -1,7 +1,7 @@
 
 import keyboardJS from 'keyboardjs';
 
-export default function detectKeypress(selectedIndex, addTextLine, increaseIndent, decreaseIndent, handleBackspace, changeFocus, test) {
+export default function detectKeypress(selectedIndex, addTextLine, increaseIndent, decreaseIndent, handleBackspace, changeFocus, saveInDB, test) {
     const enterHandler = e => {
       addTextLine(selectedIndex)
     }
@@ -34,6 +34,12 @@ export default function detectKeypress(selectedIndex, addTextLine, increaseInden
       test(selectedIndex)  
     }
 
+    const ctrlSHandler = e => {
+      e.preventRepeat()
+      e.preventDefault()
+      saveInDB()
+    }
+
     keyboardJS.bind('enter', enterHandler)
     keyboardJS.bind(['up', 'down'], arrowKeyHandler)
     keyboardJS.bind('delete', deleteHandler)
@@ -41,7 +47,7 @@ export default function detectKeypress(selectedIndex, addTextLine, increaseInden
     keyboardJS.bind('shift + tab', shiftTabHandler)
     keyboardJS.bind('backspace', backspaceHandler)
     keyboardJS.bind('space', testHandler)
-
+    keyboardJS.bind('ctrl + s', ctrlSHandler)
 
 
     return () => {
@@ -52,6 +58,8 @@ export default function detectKeypress(selectedIndex, addTextLine, increaseInden
       keyboardJS.unbind('shift + tab', shiftTabHandler)
       keyboardJS.unbind('backspace', backspaceHandler)
       keyboardJS.unbind('space', testHandler)
+      keyboardJS.unbind('ctrl + s', ctrlSHandler)
+
 
     }
   }

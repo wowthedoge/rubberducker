@@ -11,18 +11,45 @@ const App = () => {
         height: '100vh',
     }
 
+    const fetchedId = useRef(null)
+
+    useEffect(() => {
+        const getPreviousSaved = async () => {
+            await fetch("http://localhost:5050/page")
+                .then(res => res.json())
+                .then(res => res[0])
+                .then(res => {
+                    const dbTextLines = JSON.parse(res.textLines)
+                    if (dbTextLines.length > 0) {
+                        setTextLines(dbTextLines)
+                        fetchedId.current = res._id
+                    } 
+                })
+                .catch(e => console.log(e))
+        }
+        getPreviousSaved()
+    }, [])
+
     const [textLines, setTextLines] = useState([
-        { indent: 0, text: "0", isSelected: false, pathLength: 0, time: 4200 },
-        { indent: 0, text: "1", isSelected: false, pathLength: 0, time: 4200 },
-        { indent: 1, text: "2", isSelected: false, pathLength: 0, time: 4200 },
-        { indent: 1, text: "3", isSelected: false, pathLength: 0, time: 4200 },
-        { indent: 2, text: "4", isSelected: false, pathLength: 0, time: 4200 },
-        { indent: 0, text: "5", isSelected: false, pathLength: 0, time: 4200 },
+        { indent: 0, text: "0", isSelected: false, pathLength: 0, time: 0 },
+        { indent: 0, text: "1", isSelected: false, pathLength: 0, time: 0 },
+        { indent: 1, text: "2", isSelected: false, pathLength: 0, time: 0 },
+        { indent: 1, text: "3", isSelected: false, pathLength: 0, time: 0 },
+        { indent: 2, text: "4", isSelected: false, pathLength: 0, time: 0 },
+        { indent: 0, text: "5", isSelected: false, pathLength: 0, time: 0 },
     ])
 
     const selectedIndex = useRef(-1)
 
-    useEffect(() => detectKeypress(selectedIndex.current, addTextLine, increaseIndent, decreaseIndent, handleBackSpace, changeFocus, test))
+    useEffect(() => detectKeypress(
+        selectedIndex.current,
+        addTextLine,
+        increaseIndent,
+        decreaseIndent,
+        handleBackSpace,
+        changeFocus,
+        saveInDB,
+        test))
 
     const changeFocus = (direction, index) => {
         if (direction === 'up') {
@@ -35,6 +62,37 @@ const App = () => {
 
     const test = (index) => {
         console.log("last child index", calculateLastChildIndex(index))
+    }
+
+    const saveInDB = async () => {
+        if (fetchedId.current === null) {
+            await fetch("http://localhost:5050/page", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    textLines: textLines
+                })
+            })
+                .then(res => res.json())
+                .then(res => {fetchedId.current = res.id})
+                .catch(e => console.log(e))
+        } else {
+            await fetch("http://localhost:5050/page", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id: fetchedId.current,
+                    textLines: JSON.stringify(textLines),
+                })
+
+            })
+                .catch(e => console.log(e))
+        }
+
     }
 
     const decreaseIndent = (index) => {
@@ -84,7 +142,7 @@ const App = () => {
             return newTextLines
         }
         )
-    }   
+    }
 
     const selectNew = (index) => {
         console.log("selectNew", index)
@@ -99,7 +157,7 @@ const App = () => {
     const addTextLine = (index) => {
         const indent = textLines[index].indent
         setTextLines([...textLines.slice(0, index + 1),
-        { indent: indent, text: "", isSelected: false, pathLength:0, time:0 },
+        { indent: indent, text: "", isSelected: false, pathLength: 0, time: 0 },
         ...textLines.slice(index + 1)])
         selectNew(index + 1)
     }
@@ -117,9 +175,9 @@ const App = () => {
     }
 
     const saveTime = (index, time) => {
-        setTextLines(prevTextLines => prevTextLines.map((tl, i) => i===index ? {...tl, time:time}:tl))
+        setTextLines(prevTextLines => prevTextLines.map((tl, i) => i === index ? { ...tl, time: time } : tl))
     }
-    
+
     useEffect(() => selectNew(2), [])
 
     const calculateLastChildIndex = (index) => {
