@@ -15,7 +15,7 @@ const App = () => {
 
     useEffect(() => {
         const getPreviousSaved = async () => {
-            await fetch("http://localhost:5050/page")
+            await fetch(process.env.MONGODB_URI + "/page")
                 .then(res => res.json())
                 .then(res => res[0])
                 .then(res => {
@@ -66,7 +66,7 @@ const App = () => {
 
     const saveInDB = async () => {
         if (fetchedId.current === null) {
-            await fetch("http://localhost:5050/page", {
+            await fetch(process.env.MONGODB_URI + "/page", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -79,7 +79,7 @@ const App = () => {
                 .then(res => {fetchedId.current = res.id})
                 .catch(e => console.log(e))
         } else {
-            await fetch("http://localhost:5050/page", {
+            await fetch(process.env.MONGODB_URI + "/page", {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

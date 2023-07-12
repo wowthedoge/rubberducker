@@ -1,8 +1,9 @@
 # rubberducker
 
 Thought process visualiser for problem-solving.
+https://rubberducker.vercel.app/
 
-## setup
+<!-- ## setup
 
 - I'm using MongoDB Atlas so you'll have to make an account for it too ¯\\_(ツ)_/¯
 (unless there is another way I'm not aware of)
@@ -17,7 +18,7 @@ Thought process visualiser for problem-solving.
 - run `npm start`
 - cd backend
 - run `npm i`
-- run `nodemon ./server.mjs`
+- run `nodemon ./server.mjs` -->
 
 
 
