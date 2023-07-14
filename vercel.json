@@ -1,24 +1,5 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "server.mjs",
-        "use": "@now/node"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "google.com"
-      },
-      {
-        "src": "/page.mjs",
-        "dest": "google.com"
-      }
-    ],
     
-
-      "rewrites": [{ "source": "/", "destination": "https://google.com/" }]
     
     
 }
