@@ -10,7 +10,7 @@ try {
   conn = await client.connect();
 } catch(e) {
   console.error(e);
-}
+} 
 
 let db = conn.db("rubberducker");
 

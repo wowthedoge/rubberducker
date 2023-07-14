@@ -31,7 +31,7 @@ const App = () => {
     }, [])
 
     const [textLines, setTextLines] = useState([
-        { indent: 0, text: "0", isSelected: false, pathLength: 0, time: 0 },
+        { indent: 0, text: "aaaaaa", isSelected: false, pathLength: 0, time: 0 },
         { indent: 0, text: "1", isSelected: false, pathLength: 0, time: 0 },
         { indent: 1, text: "2", isSelected: false, pathLength: 0, time: 0 },
         { indent: 1, text: "3", isSelected: false, pathLength: 0, time: 0 },
