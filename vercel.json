@@ -1,5 +1,9 @@
 {
-    
-    
-    
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/server.mjs",
+      "use": "@now/node"
+    }
+  ]
 }
