@@ -9,11 +9,11 @@
     "routes": [
       {
         "src": "/(.*)",
-        "dest": "server.mjs"
+        "dest": "google.com"
       },
       {
         "src": "/page.mjs",
-        "dest": "/page.mjs"
+        "dest": "google.com"
       }
     ],
     
