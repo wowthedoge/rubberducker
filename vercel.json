@@ -1,12 +1,10 @@
 {
   "version": 2,
   "builds": [
-    {
-      "src": "backend/server.mjs",
-      "use": "@now/node"
-    }
+    { "src": "api/*.js", "use": "@now/node-server" }
   ],
   "routes": [
-    { "src": "/api/.*", "dest": "/api/page.js" }
+    { "src": "/api/(.*)", "dest": "api/$1" },
+    { "src": "/(.*)", "dest": "/" }
   ]
 }
