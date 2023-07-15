@@ -4,6 +4,8 @@ import { TextLine } from './TextLine'
 import detectKeypress from './keypresses.js'
 import { v4 as uuidv4 } from 'uuid'
 import DragSelect from 'dragselect'
+import dotenv from "dotenv";
+dotenv.config();
 
 const App = () => {
     let AppStyle = {
